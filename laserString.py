@@ -1,24 +1,34 @@
-from calibration import *
+#from calibration import *
 import RCtime, time
 import pygame
+import RPi.GPIO as GPIO
+import numpy
 
 
 class laserString:
   
-  note = 'notes/ukeA.mp3'
+#  note = 'notes/ukeA.mp3'
 
-  def __init__(self, pin):
+  def __init__(self, pin, switchPin):
     self.pin = pin
-    self.calibration = Calibration(pin)
+    self.calibrate()
+    self.switchPin=switchPin
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(switchPin, GPIO.IN)
     pygame.init()
     pygame.mixer.init()
-    pygame.mixer.music.load(self.note)
+#    pygame.mixer.music.load(self.note)
 
   def play(self):
-    max_RC_time = self.calibration.light_mean
+#    max_RC_time = self.calibration.light_mean
     while True:
-      reading =RCtime.RCtime(self.pin, max_reading=max_RC_time) 
-      if reading < (self.calibration.dark_mean + 2.0*self.calibration.dark_std):
+      reading =RCtime.RCtime(self.pin) 
+      if reading > (self.light_mean + 3.0*self.light_std):
+        if (GPIO.input(self.switchPin) == 1):
+          note ='notes/ukeB.mp3'
+        else:
+          note = 'notes/ukeA.mp3'
+        pygame.mixer.music.load(note)
         pygame.mixer.music.play()
 
 
@@ -27,7 +37,7 @@ class laserString:
     self.calibrateDark()
 
     # if 'light' and 'dark' intensities are too close, recalibration is required
-    if ((self.dark_mean + self.dark_std) > (self.light_mean - self.light_std)):
+    if ((self.dark_mean - self.dark_std) < (self.light_mean + self.light_std)):
       print 'Insufficient Light Difference. Please recalibrate'
 
 
